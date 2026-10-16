@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Free Fire Max Pro Mobile</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-tap-highlight-color:transparent}
+body{font-family:Arial,sans-serif;background:#101510;color:white;overflow:hidden}
+button{cursor:pointer;border:0;font-weight:bold;border-radius:7px;padding:11px;color:white;background:linear-gradient(135deg,#ff4500,#ff8c00)}
+button:active{transform:scale(.95)}
+.screen{display:none;position:absolute;inset:0;flex-direction:column}
+.screen.active{display:flex}
+#lobby{background:radial-gradient(ellipse at center,#47301a,#140b0b 75%)}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#111e;padding:12px;border-bottom:2px solid #ff4500}
+.logo{color:#ff652d;font-size:18px;font-weight:900}
+.wallet{display:flex;gap:8px;font-size:13px}
+.money{background:#292929;padding:8px;border:1px solid #ff762f;border-radius:8px}
+.lobbybody{padding:15px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:auto}
+.menu{padding:15px 8px;font-size:15px;min-height:60px}
+.hero{grid-column:1/-1;text-align:center;padding:24px 5px;background:#0005;border-radius:12px}
+.hero h1{font-size:clamp(24px,6vw,44px);color:#ff642e;text-shadow:0 0 15px #f40;margin:10px}
+.hero p{color:#ddd;line-height:1.7}
+.start{grid-column:1/-1;background:linear-gradient(90deg,#00ff87,#60efff);color:#07140d;font-size:23px;padding:18px}
+#game{background:#263b24}
+#canvas{width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:5px;flex-wrap:wrap;pointer-events:none;text-shadow:1px 2px 3px black;font-size:13px;font-weight:bold}
+.hud span{background:#0009;padding:8px;border-radius:6px}
+.gameback{position:absolute;top:58px;right:10px;pointer-events:auto}
+.joy{position:absolute;bottom:25px;left:20px;width:115px;height:115px;border-radius:50%;border:2px solid #fff8;background:#ffffff22;touch-action:none}
+.knob{position:absolute;width:45px;height:45px;top:33px;left:33px;border-radius:50%;background:#ff642ddd;border:2px solid white;pointer-events:none}
+.actions{position:absolute;bottom:25px;right:15px;display:flex;align-items:end;gap:9px}
+.action{width:65px;height:65px;border-radius:50%;border:2px solid white;background:#e32626dd;font-size:12px;padding:4px}
+#jump{background:#187be8dd;width:55px;height:55px}
+#reload{background:#555;width:55px;height:55px}
+.modal{display:none;position:absolute;inset:0;z-index:5;background:#101010f5;padding:18px;overflow:auto}
+.modal.active{display:block}
+.close{float:right;background:#d22}
+.modal h2{margin:15px 0;color:#ff692e}
+.card{background:#292929;padding:14px;margin:10px 0;border-radius:8px;border:1px solid #555}
+.card p{color:#ccc;margin:8px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.small{font-size:12px;color:#bbb}
+#admin{background:#200909f7;border:2px solid #f33}
+#admin h2{color:#ff4242}
+#admin .card{border-color:#a33}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#notice{position:absolute;top:100px;left:50%;transform:translateX(-50%);z-index:9;background:#111e;border:1px solid #ff762f;border-radius:8px;padding:12px;display:none;text-align:center;max-width:90%;pointer-events:none}
+@media(max-width:400px){.logo{font-size:15px}.money{font-size:11px;padding:6px}.lobbybody{padding:10px;gap:8px}.menu{font-size:13px;padding:12px 4px}.joy{width:100px;height:100px;left:12px;bottom:18px}.knob{top:27px;left:27px}.action{width:56px;height:56px}.actions{right:10px;bottom:20px;gap:6px}}
+</style>
+</head>
+<body>
+
+<section id="lobby" class="screen active">
+<header>
+<div class="logo" id="adminTrigger">🔥 FF MAX PRO</div>
+<div class="wallet">
+<div class="money">🪙 <span id="coins">1000</span></div>
+<div class="money">💎 <span id="diamonds">100</span></div>
+</div>
+</header>
+<div class="lobbybody">
+<div class="hero">
+<h1>FREE FIRE MAX</h1>
+<p>PRO MOBILE BATTLE ARENA</p>
+<p>🎯 Enemies: <span id="enemyCount">0</span> | 🏆 Kills: <span id="lobbyKills">0</span></p>
+<p class="small">Move • Aim • Shoot • Survive</p>
+</div>
+<button class="menu" onclick="openModal('store')">🛍️ Store & Shop</button>
+<button class="menu" onclick="openModal('luck')">🎰 Luck Royale</button>
+<button class="menu" onclick="openModal('mail')">🎁 Mailbox</button>
+<button class="menu" onclick="openModal('pass')">🎫 Elite Pass</button>
+<button class="menu" onclick="openModal('inventory')">🎒 Inventory & Skins</button>
+<button class="menu" onclick="openModal('stats')">🏆 Player Stats</button>
+<button class="start" onclick="startGame()">▶ START BATTLE</button>
+</div>
+</section>
+
+<section id="game" class="screen">
+<canvas id="canvas"></canvas>
+<div class="hud">
+<span>❤️ HP: <b id="hp">100</b></span>
+<span>🔫 Ammo: <b id="ammo">30</b></span>
+<span>🏆 Kills: <b id="kills">0</b></span>
+<span>🔵 Zone: <b id="zone">SAFE</b></span>
+</div>
+<button class="gameback" onclick="goLobby()">🏠 LOBBY</button>
+<div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+<div class="actions">
+<button class="action" id="jump">JUMP</button>
+<button class="action" id="reload">RELOAD</button>
+<button class="action" id="fire">🔥 FIRE</button>
+</div>
+</section>
+
+<div id="notice"></div>
+
+<div id="store" class="modal">
+<button class="close" onclick="closeModal('store')">✕ Close</button>
+<h2>🛍️ Store & Shop</h2>
+<div id="storeItems"></div>
+</div>
+
+<div id="luck" class="modal">
+<button class="close" onclick="closeModal('luck')">✕ Close</button>
+<h2>🎰 Luck Royale</h2>
+<div class="card">
+<p id="spinResult">Spin to win a reward!</p>
+<button onclick="spinWheel()">SPIN — 50 💎</button>
+</div>
+</div>
+
+<div id="mail" class="modal">
+<button class="close" onclick="closeModal('mail')">✕ Close</button>
+<h2>🎁 Mailbox</h2>
+<div class="card">
+<p>Welcome Gift: 500 coins + 50 diamonds.</p>
+<button onclick="claimReward()">CLAIM GIFT</button>
+</div>
+</div>
+
+<div id="pass" class="modal">
+<button class="close" onclick="closeModal('pass')">✕ Close</button>
+<h2>🎫 Elite Pass</h2>
+<div class="card">
+<p>Tier: <span id="tier">1</span> / 50</p>
+<p>Earn tiers by eliminating enemies.</p>
+<div style="background:#555;height:12px;border-radius:8px;overflow:hidden"><div id="progress" style="background:#ff642e;width:2%;height:100%"></div></div>
+</div>
+</div>
+
+<div id="inventory" class="modal">
+<button class="close" onclick="closeModal('inventory')">✕ Close</button>
+<h2>🎒 Inventory & Skins</h2>
+<div id="inventoryItems"></div>
+</div>
+
+<div id="stats" class="modal">
+<button class="close" onclick="closeModal('stats')">✕ Close</button>
+<h2>🏆 Player Stats</h2>
+<div class="card">
+<p>Total kills: <b id="statKills">0</b></p>
+<p>Coins earned: <b id="statCoins">0</b></p>
+<p>Games played: <b id="gamesPlayed">0</b></p>
+<p>Owned skins: <b id="skinCount">0</b></p>
+</div>
+</div>
+
+<div id="admin" class="modal">
+<button class="close" onclick="closeModal('admin')">✕ Close</button>
+<h2>🔒 SECRET ADMIN PANEL</h2>
+<p class="small">Local prototype controls only.</p>
+<div class="grid">
+<div class="card"><b>Currency</b><p>Add 99,999 coins and diamonds.</p><button onclick="adminMoney()">ADD MONEY</button></div>
+<div class="card"><b>God Mode</b><p>Ignore enemy damage.</p><button id="godBtn" onclick="toggleGod()">GOD: OFF</button></div>
+<div class="card"><b>Spawn Bot</b><p>Add an enemy to the arena.</p><button onclick="spawnEnemy()">SPAWN BOT</button></div>
+<div class="card"><b>Unlock Skins</b><p>Unlock all prototype skins.</p><button onclick="unlockSkins()">UNLOCK ALL</button></div>
+<div class="card"><b>Restore HP</b><p>Set HP to maximum.</p><button onclick="hp=100;updateHUD();notify('HP restored!')">RESTORE HP</button></div>
+<div class="card"><b>Ammo</b><p>Refill weapon magazine.</p><button onclick="ammo=30;updateHUD();notify('Ammo refilled!')">REFILL</button></div>
+<div class="card"><b>Clear Enemies</b><p>Remove all bots.</p><button onclick="enemies=[];updateHUD();notify('Arena cleared!')">CLEAR</button></div>
+<div class="card"><b>Restart Game</b><p>Start a fresh round.</p><button onclick="closeModal('admin');startGame()">RESTART</button></div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let coins=1000,diamonds=100,hp=100,kills=0,ammo=30;
+let godMode=false,claimed=false,gameRunning=false,gameOver=false;
+let gamesPlayed=0,coinsEarned=0,adminClicks=0;
+let ownedSkins=['Default'],equippedSkin='Default';
+let enemies=[],bullets=[],particles=[];
+let player={x:0,y:0,r:15,speed:3.1,angle:0};
+let keys={x:0,y:0},joyPointer=null,lastShot=0,lastTime=0,zoneTimer=0;
+let canvas=$('canvas'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=1;
+const skins=[
+{name:'Default',price:0,color:'#ff5b26'},
+{name:'Flame',price:150,color:'#ff2200'},
+{name:'Ocean',price:200,color:'#20bfff'},
+{name:'Toxic',price:250,color:'#39ff14'},
+{name:'Golden',price:400,color:'#ffd700'},
+{name:'Shadow',price:500,color:'#bc7aff'}
+];
+
+function notify(msg){
+const n=$('notice');n.textContent=msg;n.style.display='block';
+clearTimeout(notify.timer);notify.timer=setTimeout(()=>n.style.display='none',1800);
+}
+function openModal(id){$(id).classList.add('active');if(id==='store')renderStore();if(id==='inventory')renderInventory();updateWallet();}
+function closeModal(id){$(id).classList.remove('active')}
+function updateWallet(){
+$('coins').textContent=coins.toLocaleString();
+$('diamonds').textContent=diamonds.toLocaleString();
+$('lobbyKills').textContent=kills;
+$('enemyCount').textContent=enemies.length;
+$('statKills').textContent=kills;
+$('statCoins').textContent=coinsEarned;
+$('gamesPlayed').textContent=gamesPlayed;
+$('skinCount').textContent=ownedSkins.length;
+$('tier').textContent=Math.min(50,1+kills);
+$('progress').style.width=Math.min(100,2+kills*2)+'%';
+}
+function updateHUD(){
+$('hp').textContent=Math.max(0,Math.ceil(hp));
+$('ammo').textContent=ammo;
+$('kills').textContent=kills;
+$('zone').textContent=zoneTimer>60?'DANGER':'SAFE';
+updateWallet();
+}
+$('adminTrigger').addEventListener('click',()=>{
+adminClicks++;
+if(adminClicks>=5){adminClicks=0;openModal('admin');}
+else if(adminClicks===1){setTimeout(()=>adminClicks=0,2000);}
+});
+function adminMoney(){coins+=99999;diamonds+=99999;coinsEarned+=99999;updateWallet();notify('Currency added!')}
+function toggleGod(){godMode=!godMode;$('godBtn').textContent='GOD: '+(godMode?'ON':'OFF');notify('God Mode '+(godMode?'enabled':'disabled'))}
+function unlockSkins(){skins.forEach(s=>{if(!ownedSkins.includes(s.name))ownedSkins.push(s.name)});renderInventory();updateWallet();notify('All prototype skins unlocked!')}
+function renderStore(){
+$('storeItems').innerHTML=skins.map(s=>`
+<div class="card"><div class="row"><b>🎨 ${s.name} Skin</b><b>${s.price===0?'FREE':s.price+' 🪙'}</b></div>
+<p>Weapon appearance: ${s.name}</p>
+<button onclick="buySkin('${s.name}')">${ownedSkins.includes(s.name)?(equippedSkin===s.name?'EQUIPPED':'EQUIP'):'BUY'}</button></div>`).join('');
+}
+function buySkin(name){
+const s=skins.find(x=>x.name===name);if(!s)return;
+if(ownedSkins.includes(name)){equippedSkin=name;player.color=s.color;renderStore();renderInventory();notify(name+' equipped!');return}
+if(coins<s.price){notify('Not enough coins!');return}
+coins-=s.price;ownedSkins.push(name);equippedSkin=name;player.color=s.color;
+updateWallet();renderStore();renderInventory();notify('Skin purchased!');
+}
+function renderInventory(){
+$('inventoryItems').innerHTML=skins.filter(s=>ownedSkins.includes(s.name)).map(s=>`
+<div class="card row"><b>🎨 ${s.name}</b><button onclick="buySkin('${s.name}')">${equippedSkin===s.name?'EQUIPPED':'EQUIP'}</button></div>`).join('');
+}
+function spinWheel(){
+if(diamonds<50){notify('Not enough diamonds!');return}
+diamonds-=50;
+const rewards=[
+{n:'100 coins',f:()=>coins+=100},
+{n:'250 coins',f:()=>coins+=250},
+{n:'100 diamonds',f:()=>diamonds+=100},
+{n:'Flame Skin',f:()=>ownedSkins.push('Flame')},
+{n:'50 coins',f:()=>coins+=50}
+];
+const r=rewards[Math.floor(Math.random()*rewards.length)];
+r.f();$('spinResult').textContent='🎉 Reward: '+r.n;
+updateWallet();renderInventory();
+}
+function claimReward(){
+if(claimed){notify('Reward already claimed!');return}
+claimed=true;coins+=500;diamonds+=50;updateWallet();notify('Welcome gift claimed!');
+}
+function resize(){
+dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+canvas.width=Math.floor(W*dpr);canvas.height=Math.floor(H*dpr);
+canvas.style.width=W+'px';canvas.style.height=H+'px';
+ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize',resize);resize();
+
+function startGame(){
+document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active'));
+$('lobby').classList.remove('active');$('game').classList.add('active');
+if(!gameRunning){gamesPlayed++;gameRunning=true;}
+gameOver=false;hp=100;ammo=30;kills=0;zoneTimer=0;
+player.x=W/2;player.y=H/2;player.angle=0;
+enemies=[];bullets=[];particles=[];
+for(let i=0;i<5;i++)spawnEnemy();
+lastTime=performance.now();updateHUD();
+}
+function goLobby(){
+gameRunning=false;$('game').classList.remove('active');$('lobby').classList.add('active');
+document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active'));
+updateWallet();
+}
+function spawnEnemy(){
+if(enemies.length>=35){notify('Too many enemies!');return}
+let a=Math.random()*Math.PI*2,dist=180+Math.random()*180;
+enemies.push({x:Math.max(20,Math.min(W-20,player.x+Math.cos(a)*dist)),
+y:Math.max(100,Math.min(H-30,player.y+Math.sin(a)*dist)),
+r:13,hp:2,speed:.45+Math.random()*.45,hit:0});
+updateWallet();
+}
+function shoot(){
+if(!gameRunning||gameOver)return;
+if(ammo<=0){notify('Reload your weapon!');return}
+const now=performance.now();if(now-lastShot<180)return;lastShot=now;ammo--;
+bullets.push({x:player.x+Math.cos(player.angle)*20,y:player.y+Math.sin(player.angle)*20,
+vx:Math.cos(player.angle)*9,vy:Math.sin(player.angle)*9,life:55});
+updateHUD();
+}
+function reload(){ammo=30;updateHUD();notify('Reloaded!')}
+function jump(){
+if(!gameRunning||gameOver)return;
+player.x=Math.max(20,Math.min(W-20,player.x+Math.cos(player.angle)*65));
+player.y=Math.max(80,Math.min(H-20,player.y+Math.sin(player.angle)*65));
+particles.push({x:player.x,y:player.y,r:25,life:15});
+}
+$('fire').addEventListener('pointerdown',e=>{e.preventDefault();shoot()});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+$('reload').addEventListener('pointerdown',e=>{e.preventDefault();reload()});
+
+$('joy').addEventListener('pointerdown',e=>{
+e.preventDefault();joyPointer=e.pointerId;$('joy').setPointerCapture(e.pointerId);moveJoy(e);
+});
+$('joy').addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)moveJoy(e)});
+function moveJoy(e){
+const rect=$('joy').getBoundingClientRect();
+let dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2);
+const max=rect.width*.32,dist=Math.hypot(dx,dy);
+if(dist>max){dx=dx/dist*max;dy=dy/dist*max}
+$('knob').style.transform=`translate(${dx}px,${dy}px)`;
+keys.x=dx/max;keys.y=dy/max;
+if(Math.hypot(keys.x,keys.y)>.15)player.angle=Math.atan2(keys.y,keys.x);
+}
+function stopJoy(e){
+if(joyPointer===null)return;
+if(e&&e.pointerId!==joyPointer)return;
+joyPointer=null;keys.x=0;keys.y=0;$('knob').style.transform='translate(0,0)';
+}
+$('joy').addEventListener('pointerup',stopJoy);
+$('joy').addEventListener('pointercancel',stopJoy);
+$('joy').addEventListener('lostpointercapture',stopJoy);
+
+addEventListener('keydown',e=>{
+if(e.key==='ArrowUp'||e.key==='w')keys.y=-1;
+if(e.key==='ArrowDown'||e.key==='s')keys.y=1;
+if(e.key==='ArrowLeft'||e.key==='a')keys.x=-1;
+if(e.key==='ArrowRight'||e.key==='d')keys.x=1;
+if(e.code==='Space')shoot();
+if(e.key==='r'||e.key==='R')reload();
+});
+addEventListener('keyup',e=>{
+if(['ArrowLeft','ArrowRight','a','d'].includes(e.key))keys.x=0;
+if(['ArrowUp','ArrowDown','w','s'].includes(e.key))keys.y=0;
+});
+
+function drawWorld(){
+ctx.fillStyle='#243b24';ctx.fillRect(0,0,W,H);
+const grid=60,ox=(-player.x%grid),oy=(-player.y%grid);
+ctx.strokeStyle='#ffffff0c';ctx.lineWidth=1;
+for(let x=ox;x<W;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+for(let y=oy;y<H;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+for(let i=0;i<8;i++){
+let x=((i*173-player.x*.25)%W+W)%W,y=((i*127-player.y*.25)%H+H)%H;
+ctx.fillStyle='#455a34';ctx.fillRect(x,y,35,24);
+}
+}
+function circle(x,y,r,color,stroke){
+ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
+}
+function gameLoop(t){
+requestAnimationFrame(gameLoop);
+if(!gameRunning||!$('game').classList.contains('active'))return;
+const dt=Math.min((t-lastTime)/16.67,2)||1;lastTime=t;
+if(!gameOver){
+player.x=Math.max(15,Math.min(W-15,player.x+keys.x*player.speed*dt));
+player.y=Math.max(75,Math.min(H-15,player.y+keys.y*player.speed*dt));
+zoneTimer+=dt/60;
+if(zoneTimer>60&&!godMode){hp-=.025*dt;if(hp<=0)endGame('Safe zone damage');}
+enemies.forEach(e=>{
+const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy)||1;
+if(d>25){e.x+=dx/d*e.speed*dt;e.y+=dy/d*e.speed*dt}
+else if(!godMode){hp-=.12*dt;if(hp<=0)endGame('Eliminated')}
+e.hit=Math.max(0,e.hit-dt);
+});
+for(let i=bullets.length-1;i>=0;i--){
+const b=bullets[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+let remove=b.life<=0||b.x<0||b.y<0||b.x>W||b.y>H;
+for(let j=enemies.length-1;j>=0&&!remove;j--){
+const e=enemies[j];
+if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+4){
+e.hp--;e.hit=5;remove=true;
+if(e.hp<=0){
+enemies.splice(j,1);kills++;coins+=25;coinsEarned+=25;
+if(Math.random()<.12)diamonds+=5;
+if(kills%3===0)spawnEnemy();
+updateHUD();
+}
+}
+}
+if(remove)bullets.splice(i,1);
+}
+if(enemies.length<3&&Math.random()<.012)spawnEnemy();
+}
+drawWorld();
+enemies.forEach(e=>{
+circle(e.x,e.y,e.r,e.hit?'#ffcc00':'#e84343','#fff');
+ctx.fillStyle='#111';ctx.fillRect(e.x-13,e.y-e.r-9,26,4);
+ctx.fillStyle='#6f6';ctx.fillRect(e.x-13,e.y-e.r-9,26*(e.hp/2),4);
+});
+bullets.forEach(b=>circle(b.x,b.y,4,'#ffe34d'));
+particles=particles.filter(p=>p.life-->0);
+particles.forEach(p=>{ctx.strokeStyle='#fff8';ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/15),0,7);ctx.stroke()});
+ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);
+circle(0,0,player.r,player.color||'#ff5b26','#fff');
+ctx.fillStyle='#ddd';ctx.fillRect(5,-4,20,8);
+ctx.restore();
+if(Math.random()<.05)updateHUD();
+}
+function endGame(reason){
+if(gameOver)return;gameOver=true;hp=Math.max(0,hp);updateHUD();
+notify(reason+'! Kills: '+kills);
+setTimeout(()=>{if(gameOver&&gameRunning)showGameOver()},500);
+}
+function showGameOver(){
+if(!gameRunning)return;
+const again=confirm('GAME OVER\\nKills: '+kills+'\\nPlay again?');
+if(again)startGame();else goLobby();
+}
+requestAnimationFrame(gameLoop);
+updateWallet();
+</script>
+</body>
+  </html>
